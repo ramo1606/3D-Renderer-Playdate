@@ -1,0 +1,5 @@
+name=Playdate Template C Lua
+author=Ramiro Alurralde
+description=A small Tempalte of the C API and Lua
+bundleID=com.ramo.ramo1606
+imagePath=
