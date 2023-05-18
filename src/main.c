@@ -8,75 +8,18 @@
 
 #include "pd_api.h"
 #include "memory.h"
+#include "display.h"
 
-int displayRowBytes = 0;
-int displayWidth = 0;
-int displayHeight = 0;
-
-uint8_t* frameBuffer = NULL;
-LCDBitmap* bufferBitmap = NULL;
-
-PlaydateAPI* playDate = NULL;
+static PlaydateAPI* playDate = NULL;
 
 static int update(void* userdata);
 const char* fontpath = "/System/Fonts/Asheville-Sans-14-Bold.pft";
 LCDFont* font = NULL;
 
-void putPixel(int x, int y, LCDSolidColor color)
-{
-    uint8_t* block = frameBuffer + (y*displayRowBytes) + (x / 8);
-    uint8_t data = 0x80 >> (x % 8);
-    *block = color ? *block | data : *block & ~data;
-}
-
-void drawGrid(LCDSolidColor color)
-{
-    for (int y = 5; y < displayHeight; y += 10)
-    {
-        for (int x = 5; x < displayWidth; x += 10)
-        {
-            putPixel(x, y, color);
-        }
-    }
-}
-
-void renderColorBuffer(void)
-{
-    uint8_t* bitMapData = NULL;
-    playDate->graphics->getBitmapData(bufferBitmap, NULL, NULL, NULL, NULL, &bitMapData);
-    
-    memmove((void*)bitMapData, (void*)frameBuffer, displayRowBytes * displayHeight);
-
-    playDate->graphics->drawBitmap(bufferBitmap, 0, 0, kBitmapUnflipped);
-}
-
-void clearFrameBuffer(LCDSolidColor color)
-{
-    for (int y = 0; y < displayHeight; y++)
-    {
-        for (int x = 0; x < displayWidth; x++)
-        {
-            putPixel(x, y, kColorBlack);
-        }
-    }
-}
-
 void setup(void)
 {
     initializeMemoryTools(playDate);
-
-    uint8_t* bitMapMask = NULL;
-    uint8_t* bitMapData = NULL;
-
-    // Get display buffer Bitmap and its info
-    playDate->graphics->getBitmapData(playDate->graphics->getDisplayBufferBitmap(), &displayWidth, &displayHeight, &displayRowBytes, &bitMapMask, &bitMapData);
-
-    // Allocate the required memory in bytes to hold the frame buffer
-    // Allocate a frame buffer of height * rowBytes
-    // Each display row hast 52 bytes = 416 pixels, the las two bytes are not used.
-    // since each display row are 32bits aligned we need at leas 52 bytes
-    frameBuffer = (uint8_t*)pd_calloc(displayRowBytes * displayHeight, sizeof(uint8_t));
-    bufferBitmap = playDate->graphics->newBitmap(displayWidth, displayHeight, kColorWhite);
+	initDisplay(playDate);
 }
 
 void processInput(void)
