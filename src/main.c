@@ -9,8 +9,12 @@
 #include "pd_api.h"
 #include "memory.h"
 
-uint8_t* colorBuffer = NULL;
-LCDBitmap* bitMap = NULL;
+int displayRowBytes = 0;
+int displayWidth = 0;
+int displayHeight = 0;
+
+uint8_t* frameBuffer = NULL;
+LCDBitmap* bufferBitmap = NULL;
 
 PlaydateAPI* playDate = NULL;
 
@@ -18,32 +22,41 @@ static int update(void* userdata);
 const char* fontpath = "/System/Fonts/Asheville-Sans-14-Bold.pft";
 LCDFont* font = NULL;
 
-void drawGrid(void)
+void putPixel(int x, int y, LCDSolidColor color)
 {
-    // TODO:
+    uint8_t* block = frameBuffer + (y*displayRowBytes) + (x / 8);
+    uint8_t data = 0x80 >> (x % 8);
+    *block = color ? *block | data : *block & ~data;
+}
+
+void drawGrid(LCDSolidColor color)
+{
+    for (int y = 5; y < displayHeight; y += 10)
+    {
+        for (int x = 5; x < displayWidth; x += 10)
+        {
+            putPixel(x, y, color);
+        }
+    }
 }
 
 void renderColorBuffer(void)
 {
-    int bitMapWidth = 0;
-    int bitMapHeight = 0;
-    int bitMapRowBytes = 0;
-    uint8_t* bitMapMask = NULL;
     uint8_t* bitMapData = NULL;
-    playDate->graphics->getBitmapData(bitMap, &bitMapWidth, &bitMapHeight, &bitMapRowBytes, &bitMapMask, &bitMapData);
+    playDate->graphics->getBitmapData(bufferBitmap, NULL, NULL, NULL, NULL, &bitMapData);
+    
+    memmove((void*)bitMapData, (void*)frameBuffer, displayRowBytes * displayHeight);
 
-    memcpy(bitMapData, colorBuffer, playDate->display->getWidth() * playDate->display->getHeight() * sizeof(uint8_t));
-
-    playDate->graphics->drawBitmap(bitMap, 0, 0, kBitmapUnflipped);
+    playDate->graphics->drawBitmap(bufferBitmap, 0, 0, kBitmapUnflipped);
 }
 
-void clearColorBuffer(uint8_t color)
+void clearFrameBuffer(LCDSolidColor color)
 {
-    for (int y = 0; y < playDate->display->getHeight(); y++)
+    for (int y = 0; y < displayHeight; y++)
     {
-        for (int x = 0; x < playDate->display->getWidth(); x++)
+        for (int x = 0; x < displayWidth; x++)
         {
-            colorBuffer[(playDate->display->getWidth() * y) + x] = color;
+            putPixel(x, y, kColorBlack);
         }
     }
 }
@@ -52,11 +65,18 @@ void setup(void)
 {
     initializeMemoryTools(playDate);
 
-    // Allocate the required memory in bytes to hold the color buffer
-    colorBuffer = (uint8_t*)pd_calloc(playDate->display->getWidth() * playDate->display->getHeight(), sizeof(uint8_t));
+    uint8_t* bitMapMask = NULL;
+    uint8_t* bitMapData = NULL;
 
-    // Creating a SDL texture that is used to display the color buffer
-    bitMap = playDate->graphics->newBitmap(playDate->display->getWidth(), playDate->display->getHeight(), kColorWhite);
+    // Get display buffer Bitmap and its info
+    playDate->graphics->getBitmapData(playDate->graphics->getDisplayBufferBitmap(), &displayWidth, &displayHeight, &displayRowBytes, &bitMapMask, &bitMapData);
+
+    // Allocate the required memory in bytes to hold the frame buffer
+    // Allocate a frame buffer of height * rowBytes
+    // Each display row hast 52 bytes = 416 pixels, the las two bytes are not used.
+    // since each display row are 32bits aligned we need at leas 52 bytes
+    frameBuffer = (uint8_t*)pd_calloc(displayRowBytes * displayHeight, sizeof(uint8_t));
+    bufferBitmap = playDate->graphics->newBitmap(displayWidth, displayHeight, kColorWhite);
 }
 
 void processInput(void)
@@ -71,7 +91,8 @@ void gameUpdate(void)
 
 void render(void)
 {
-    clearColorBuffer(0x00);
+    clearFrameBuffer(kColorBlack);
+    drawGrid(kColorWhite);
     renderColorBuffer();
 }
 
