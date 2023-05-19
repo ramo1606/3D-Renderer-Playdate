@@ -30,7 +30,7 @@ void initDisplay(PlaydateAPI* pd)
     bufferBitmap = playDate->graphics->newBitmap(displayWidth, displayHeight, kColorWhite);
 }
 
-void putPixel(int x, int y, LCDSolidColor color)
+void drawPixel(int x, int y, LCDSolidColor color)
 {
     //Logic to set a specific pixel in the screen
     uint8_t* block = frameBuffer + (y * displayRowBytes) + (x / 8);
@@ -44,7 +44,7 @@ void drawGrid(LCDSolidColor color)
     {
         for (int x = 5; x < displayWidth; x += 10)
         {
-            putPixel(x, y, color);
+            drawPixel(x, y, color);
         }
     }
 }
@@ -55,7 +55,7 @@ void drawRect(int x, int y, int width, int height, LCDSolidColor color)
     {
         for (int j = x; j < x + width; j++)
         {
-            putPixel(i, j, color);
+            drawPixel(i, j, color);
         }
     }
 }
@@ -82,7 +82,7 @@ void clearFrameBuffer(LCDSolidColor color)
     {
         for (int x = 0; x < displayWidth; x++)
         {
-            putPixel(x, y, kColorBlack);
+            drawPixel(x, y, kColorBlack);
         }
     }
 }

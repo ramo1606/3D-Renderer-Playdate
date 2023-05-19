@@ -28,6 +28,9 @@ set(CMAKE_XCODE_GENERATE_SCHEME TRUE)
 set(PLAYDATE_GAME_NAME Rasterizer)
 set(PLAYDATE_GAME_DEVICE Rasterizer_DEVICE)
 
+file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.c") # Define PROJECT_SOURCES as a list of all source files
+file(GLOB_RECURSE PROJECT_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.h") # Define PROJECT_HEADERS as a list of all source files
+
 project(${PLAYDATE_GAME_NAME} C ASM)
 
 if (TOOLCHAIN STREQUAL "armgcc")
@@ -35,6 +38,9 @@ if (TOOLCHAIN STREQUAL "armgcc")
 else()
 	add_library(${PLAYDATE_GAME_NAME} SHARED src/main.c )
 endif()
+
+target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
+target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_HEADERS})
 
 include(${SDK}/C_API/buildsupport/playdate_game.cmake)
 

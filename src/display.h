@@ -5,7 +5,7 @@
 void initDisplay(PlaydateAPI* pd);
 
 /* Drawing Functions */
-void putPixel(int x, int y, LCDSolidColor color);
+void drawPixel(int x, int y, LCDSolidColor color);
 void drawRect(int x, int y, int width, int height, LCDSolidColor color);
 void drawGrid(LCDSolidColor color);
 
