@@ -51,9 +51,9 @@ void drawGrid(LCDSolidColor color)
 
 void drawRect(int x, int y, int width, int height, LCDSolidColor color)
 {
-    for (int i = y; i < y + height; i++)
+    for (int j = y; j < y + height; j++)
     {
-        for (int j = x; j < x + width; j++)
+        for (int i = x; i < x + width; i++)
         {
             drawPixel(i, j, color);
         }
