@@ -15,7 +15,10 @@
 vec3_t cube_points[N_POINTS];
 vec2_t projected_points[N_POINTS];
 
-float fov_factor = 64;
+vec3_t camera_position = { .x = 0.f, .y = 0.f, .z = -5.f };
+vec3_t cube_rotation = { .x = 0.f, .y = 0.f, .z = 0.f };
+
+float fov_factor = 256;
 
 static PlaydateAPI* playDate = NULL;
 
@@ -52,15 +55,27 @@ void processInput(void)
 
 vec2_t project(vec3_t point)
 {
-    vec2_t projected_point = { .x = fov_factor * point.x, .y = fov_factor * point.y };
+    vec2_t projected_point = { .x = (fov_factor * point.x) / point.z, .y = (fov_factor * point.y) / point.z };
     return projected_point;
 }
 
 void gameUpdate(void)
 {
+    cube_rotation.y += 0.02f;
+    cube_rotation.z += 0.02f;
+    cube_rotation.x += 0.02f;
+
     for (int i = 0; i < N_POINTS; ++i)
     {
-        projected_points[i] = project(cube_points[i]);
+        vec3_t point = cube_points[i];
+        
+        vec3_t transformed_point = vec3_rotate_x(point, cube_rotation.x);
+        transformed_point = vec3_rotate_y(transformed_point, cube_rotation.y);
+        transformed_point = vec3_rotate_z(transformed_point, cube_rotation.z);
+
+        // Translate the points away from the camera
+        transformed_point.z -= camera_position.z;
+        projected_points[i] = project(transformed_point);
     }
 }
 
