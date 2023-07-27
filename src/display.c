@@ -38,6 +38,53 @@ void drawPixel(int x, int y, LCDSolidColor color)
     *block = color ? *block | data : *block & ~data;
 }
 
+//void drawLine (int x0, int y0, int x1, int y1, LCDSolidColor color)
+//{
+//    // DDA Algorithm
+//    int delta_x = (x1 - x0);
+//    int delta_y = (y1 - y0);
+//
+//    int longest_side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
+//
+//    // Find how much we should increment in both x and y each step
+//    float x_inc = delta_x / (float)longest_side_length;
+//    float y_inc = delta_y / (float)longest_side_length;
+//
+//    float current_x = x0;
+//    float current_y = y0;
+//
+//    for(int i = 0; i <= longest_side_length; i++)
+//    {
+//        drawPixel(round(current_x), round(current_y), color);
+//        current_x += x_inc;
+//        current_y += y_inc;
+//    }
+//}
+
+void drawLine (int x0, int y0, int x1, int y1, LCDSolidColor color)
+{
+    // Bresenham Algorithms
+    int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1; 
+    int err = dx + dy, e2; /* error value e_xy */
+    
+    for (;;) /* loop */
+    {
+        drawPixel(x0,y0, color);
+        if (x0 == x1 && y0 == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
+        if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
+    }
+}
+
+void drawTriangle(int x0, int y0, int x1, int y1, int x2, int y2, LCDSolidColor color)
+{
+    drawLine (x0, y0, x1, y1, color);
+    drawLine (x0, y0, x2, y2, color);
+    drawLine (x1, y1, x2, y2, color);
+}
+
 void drawGrid(LCDSolidColor color)
 {
     for (int y = 5; y < displayHeight; y += 10)
