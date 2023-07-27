@@ -29,22 +29,6 @@ void setup(void)
 {
     initializeMemoryTools(playDate);
 	initDisplay(playDate);
-
-    int point_count = 0;
-
-    // start loading my array of vectors
-    // form -1 to 1
-    for (float x = -1.f; x <= 1.f; x += 0.25f)
-    {
-        for (float y = -1.f; y <= 1.f; y += 0.25f)
-        {
-            for (float z = -1.f; z <= 1.f; z += 0.25f)
-            {
-                vec3_t new_point = { .x = x, .y = y, .z = z };
-                cube_points[point_count++] = new_point;
-            }
-        }
-    }
 }
 
 void processInput(void)
@@ -72,7 +56,7 @@ void gameUpdate(void)
         face_vertices[1] = mesh_vertices[mesh_face.b - 1];
         face_vertices[2] = mesh_vertices[mesh_face.c - 1];
 
-        triangle_t projected_triangle = {};
+        triangle_t projected_triangle = { 0 };
 
         for (int j = 0; j < 3; j++)
         {
