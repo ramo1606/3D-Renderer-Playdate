@@ -28,19 +28,30 @@ set(CMAKE_XCODE_GENERATE_SCHEME TRUE)
 set(PLAYDATE_GAME_NAME Rasterizer)
 set(PLAYDATE_GAME_DEVICE Rasterizer_DEVICE)
 
-file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.c") # Define PROJECT_SOURCES as a list of all source files
-file(GLOB_RECURSE PROJECT_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.h") # Define PROJECT_HEADERS as a list of all source files
+#file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.c") # Define PROJECT_SOURCES as a list of all source files
+#file(GLOB_RECURSE PROJECT_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.h") # Define PROJECT_HEADERS as a list of all source files
 
 project(${PLAYDATE_GAME_NAME} C ASM)
 
+# Adding our source files
+file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.*") # Define PROJECT_SOURCES as a list of all source files
+set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/src/") # Define PROJECT_INCLUDE to be the path to the include directory of the project
+
+# Source files
+file(
+	GLOB_RECURSE
+	SOURCE_FILES
+	src/*.c
+)
+
 if (TOOLCHAIN STREQUAL "armgcc")
-	add_executable(${PLAYDATE_GAME_DEVICE} src/main.c)
+	#add_executable(${PLAYDATE_GAME_DEVICE} src/main.c)
+	add_executable(${PLAYDATE_GAME_DEVICE} ${SDK}/C_API/buildsupport/setup.c  ${SOURCE_FILES})
 else()
 	add_library(${PLAYDATE_GAME_NAME} SHARED src/main.c )
+	target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
+	target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_HEADERS})
 endif()
-
-target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
-target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_HEADERS})
 
 include(${SDK}/C_API/buildsupport/playdate_game.cmake)
 
