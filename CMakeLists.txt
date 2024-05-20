@@ -1,57 +1,79 @@
+# Set minimum required CMake version
 cmake_minimum_required(VERSION 3.14)
-set(CMAKE_C_STANDARD 11)
 
+# Set C language standard to C99 (for compatibility with Playdate SDK)
+set(CMAKE_C_STANDARD 99)
+
+# --- Playdate SDK Path Resolution ---
+# Check for environment variable PLAYDATE_SDK_PATH, which can be set by the user
 set(ENVSDK $ENV{PLAYDATE_SDK_PATH})
 
+# If environment variable is not set, try to get it from Playdate config file
 if (NOT ${ENVSDK} STREQUAL "")
-	# Convert path from Windows
-	file(TO_CMAKE_PATH ${ENVSDK} SDK)
+  # Convert path to CMake format (important if building on Windows)
+  file(TO_CMAKE_PATH ${ENVSDK} SDK)
 else()
-	execute_process(
-			COMMAND bash -c "egrep '^\\s*SDKRoot' $HOME/.Playdate/config"
-			COMMAND head -n 1
-			COMMAND cut -c9-
-			OUTPUT_VARIABLE SDK
-			OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
+  # Execute shell commands to extract SDK path from config file
+  execute_process(
+    COMMAND bash -c "egrep '^\\s*SDKRoot' $HOME/.Playdate/config"
+    COMMAND head -n 1  # Get the first line
+    COMMAND cut -c9-   # Remove the 'SDKRoot=' prefix
+    OUTPUT_VARIABLE SDK
+    OUTPUT_STRIP_TRAILING_WHITESPACE  # Remove any extra spaces
+  )
 endif()
 
+# Throw an error if the SDK path couldn't be determined
 if (NOT EXISTS ${SDK})
-	message(FATAL_ERROR "SDK Path not found; set ENV value PLAYDATE_SDK_PATH")
-	return()
+  message(FATAL_ERROR "SDK Path not found; set ENV value PLAYDATE_SDK_PATH")
+  return() 
 endif()
 
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
-set(CMAKE_XCODE_GENERATE_SCHEME TRUE)
 
-# Game Name Customization
-set(PLAYDATE_GAME_NAME Rasterizer)
+# --- Project Configuration ---
+# Set available build configurations
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release") 
+# Generate Xcode scheme (for easier building in Xcode)
+set(CMAKE_XCODE_GENERATE_SCHEME TRUE) 
+
+# Customize game name and device target name
+set(PLAYDATE_GAME_NAME Rasterizer)     
 set(PLAYDATE_GAME_DEVICE Rasterizer_DEVICE)
 
-#file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.c") # Define PROJECT_SOURCES as a list of all source files
-#file(GLOB_RECURSE PROJECT_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.h") # Define PROJECT_HEADERS as a list of all source files
+# Define the project (C and Assembly languages used)
+project(${PLAYDATE_GAME_NAME} C ASM) 
 
-project(${PLAYDATE_GAME_NAME} C ASM)
+# --- Include Directories ---
+# Tell compiler where to find project headers
+include_directories(include)
+# Include Playdate SDK C API headers
+include_directories(${SDK}/C_API)
 
-# Adding our source files
-file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.*") # Define PROJECT_SOURCES as a list of all source files
-set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/src/") # Define PROJECT_INCLUDE to be the path to the include directory of the project
 
-# Source files
-file(
-	GLOB_RECURSE
-	SOURCE_FILES
-	src/*.c
-)
+# --- Source Files and Executable ---
+# Collect all source files (recursively)
+file(GLOB_RECURSE SOURCE_FILES src/*.c)
+file(GLOB_RECURSE HEADER_FILES include/*.h) 
 
-if (TOOLCHAIN STREQUAL "armgcc")
-	#add_executable(${PLAYDATE_GAME_DEVICE} src/main.c)
-	add_executable(${PLAYDATE_GAME_DEVICE} ${SDK}/C_API/buildsupport/setup.c  ${SOURCE_FILES})
-else()
-	add_library(${PLAYDATE_GAME_NAME} SHARED src/main.c )
-	target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
-	target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_HEADERS})
+# Build either executable or library depending on the toolchain
+if (TOOLCHAIN STREQUAL "armgcc") # Building for Playdate device
+  add_executable(${PLAYDATE_GAME_DEVICE} ${SDK}/C_API/buildsupport/setup.c ${SOURCE_FILES} ${HEADER_FILES})
+else() # Building for testing or other platforms
+  add_library(${PLAYDATE_GAME_NAME} SHARED ${SOURCE_FILES} ${HEADER_FILES}) 
 endif()
 
-include(${SDK}/C_API/buildsupport/playdate_game.cmake)
 
+# --- Unit Tests (Optional) ---
+# (Uncomment and adjust if you're using a C unit testing framework)
+# file(GLOB_RECURSE TEST_SOURCES tests/*.c)
+# add_executable(unit_tests ${TEST_SOURCES})
+
+# (Uncomment and adjust to link test executable to the game and Playdate stub library)
+# target_link_libraries(unit_tests ${PLAYDATE_GAME_NAME} ${SDK}/C_API/buildsupport/pd_api_stub.c) 
+
+
+# --- Playdate Integration ---
+# Include the Playdate-specific CMake module for build configuration
+include(${SDK}/C_API/buildsupport/playdate_game.cmake) 
+# (Uncomment and adjust if you're ready to build a Playdate game package)
+# playdate_game(${PLAYDATE_GAME_DEVICE} ${PLAYDATE_GAME_NAME}) 
